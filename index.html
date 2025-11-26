@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>DeepMind Puzzle Test</title>
+  <title>AI Chess Puzzle Lab</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css" />
   <style>
     :root { color-scheme: dark; }
@@ -27,6 +27,7 @@
       position: sticky;
       top: 1rem;
     }
+    .audio-panel { position: static; }
     #status, #commentary {
       min-height: 2.2em;
       overflow-wrap: anywhere;
@@ -46,10 +47,23 @@
       flex-wrap: wrap;
       margin-top: 0.5rem;
     }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+    }
+    .pill-ok { background: #19361d; color: #9ae3a0; }
+    .pill-off { background: #3a1d1d; color: #f3a7a7; }
+    .pill-warn { background: #3a301d; color: #f3e1a7; }
+    audio { width: 100%; margin-top: 0.5rem; }
+    .stack { display: flex; flex-direction: column; gap: 0.35rem; }
   </style>
 </head>
 <body>
-  <h1>DeepMind Puzzle Test</h1>
+  <h1>AI Chess Puzzle Lab</h1>
   <div id="board"></div>
   <div class="panel">
     <div class="controls" style="justify-content: space-between; align-items: center;">
@@ -71,6 +85,20 @@
       <button id="reset">Reset</button>
     </div>
   </div>
+  <div class="panel audio-panel">
+    <div class="controls" style="justify-content: space-between; align-items: center;">
+      <strong>Commentary audio</strong>
+      <span id="audio-backend" class="pill pill-warn">Checking…</span>
+    </div>
+    <div class="stack">
+      <p id="audio-status">Enable a move to hear the narration.</p>
+      <div class="controls">
+        <button id="play-commentary">Play commentary</button>
+        <button id="regen-commentary">Regenerate</button>
+      </div>
+      <audio id="commentary-audio" controls preload="none"></audio>
+    </div>
+  </div>
 
   <!-- Use a non-module UMD build of chess.js for browser globals -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
@@ -79,7 +107,7 @@
   <script>
     async function main() {
       const res = await fetch('puzzles.json');
-    const puzzles = await res.json();
+      const puzzles = await res.json();
       let puzzleIndex = 0;
       let puzzle = puzzles[puzzleIndex];
 
@@ -102,11 +130,121 @@
       const selectEl = document.getElementById('puzzle-select');
       const prevPuzzleBtn = document.getElementById('prev-puzzle');
       const nextPuzzleBtn = document.getElementById('next-puzzle');
+      const audioEl = document.getElementById('commentary-audio');
+      const audioStatusEl = document.getElementById('audio-status');
+      const audioBackendEl = document.getElementById('audio-backend');
+      const playAudioBtn = document.getElementById('play-commentary');
+      const regenAudioBtn = document.getElementById('regen-commentary');
 
       // populate selector
-      selectEl.innerHTML = puzzles.map((p, idx) => `<option value=\"${idx}\">${idx + 1}. ${p.id}</option>`).join('');
+      selectEl.innerHTML = puzzles.map((p, idx) => `<option value="${idx}">${idx + 1}. ${p.id}</option>`).join('');
 
       let moveIndex = 0;
+      let audioEnabled = false;
+      const audioCache = new Map();
+
+      function audioCacheKey(idx = moveIndex) {
+        return `${puzzle.id}:${idx}`;
+      }
+
+      function currentCommentary() {
+        if (moveIndex <= 0) return '';
+        return (puzzle.commentary || [])[moveIndex - 1] || '';
+      }
+
+      function resetAudio() {
+        audioEl.pause();
+        audioEl.removeAttribute('src');
+        audioEl.load();
+        audioStatusEl.textContent = 'Enable a move to hear the narration.';
+        playAudioBtn.disabled = true;
+        regenAudioBtn.disabled = true;
+      }
+
+      function updateAudioButtons() {
+        const disabled = !audioEnabled || moveIndex === 0;
+        playAudioBtn.disabled = disabled;
+        regenAudioBtn.disabled = disabled;
+      }
+
+      async function playCommentary({ force = false, autoplay = false } = {}) {
+        if (!audioEnabled) return;
+        if (moveIndex === 0) {
+          audioStatusEl.textContent = 'Play the first move to unlock audio.';
+          updateAudioButtons();
+          return;
+        }
+        const text = currentCommentary().trim();
+        if (!text) {
+          audioStatusEl.textContent = 'No commentary available for this move.';
+          updateAudioButtons();
+          return;
+        }
+        const cacheKey = audioCacheKey();
+        if (audioCache.has(cacheKey) && !force) {
+          const cachedUrl = audioCache.get(cacheKey);
+          audioEl.src = `${cachedUrl}?t=${Date.now()}`;
+          audioStatusEl.textContent = 'Playing cached audio.';
+          if (autoplay) {
+            audioEl.play().catch(() => {});
+          }
+          updateAudioButtons();
+          return;
+        }
+
+        audioStatusEl.textContent = 'Requesting speech...';
+        playAudioBtn.disabled = regenAudioBtn.disabled = true;
+        try {
+          const res = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text,
+              puzzle_id: puzzle.id,
+              move_index: moveIndex,
+              move_san: puzzle.san_solution[moveIndex - 1] || '',
+              force
+            })
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || `TTS failed (${res.status})`);
+          }
+          const data = await res.json();
+          if (!data.url) {
+            throw new Error('TTS backend did not return audio.');
+          }
+          audioCache.set(cacheKey, data.url);
+          audioEl.src = `${data.url}?t=${Date.now()}`;
+          audioStatusEl.textContent = `Audio ready via ${data.engine || 'tts'}${data.cached ? ' (cached).' : '.'}`;
+          if (autoplay) {
+            audioEl.play().catch(() => {});
+          }
+        } catch (err) {
+          console.error(err);
+          audioStatusEl.textContent = `Audio error: ${err.message}`;
+        } finally {
+          updateAudioButtons();
+        }
+      }
+
+      async function checkAudioBackend() {
+        try {
+          const res = await fetch('/health', { cache: 'no-store' });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json().catch(() => ({}));
+          audioEnabled = true;
+          audioBackendEl.textContent = data.engine ? `Audio: ${data.engine}` : 'Audio ready';
+          audioBackendEl.className = 'pill pill-ok';
+          updateAudioButtons();
+        } catch (err) {
+          audioEnabled = false;
+          audioBackendEl.textContent = 'Audio offline';
+          audioBackendEl.className = 'pill pill-off';
+          audioStatusEl.textContent = 'Audio backend unavailable; using silent mode.';
+          updateAudioButtons();
+        }
+      }
 
       function updateStatus() {
         if (moveIndex === 0) {
@@ -139,6 +277,7 @@
         `;
         moveIndex = 0;
         updateStatus();
+        resetAudio();
       }
 
       nextBtn.addEventListener('click', () => {
@@ -149,6 +288,7 @@
           board.position(game.fen());
           moveIndex += 1;
           updateStatus();
+          playCommentary({ autoplay: true });
         } catch (e) {
           console.error('Illegal SAN in sequence:', san, e);
           statusEl.textContent = 'Error: illegal move in solution sequence. Check console.';
@@ -166,6 +306,8 @@
       resetBtn.addEventListener('click', () => {
         loadPuzzle(puzzleIndex);
       });
+      playAudioBtn.addEventListener('click', () => playCommentary({ autoplay: true }));
+      regenAudioBtn.addEventListener('click', () => playCommentary({ force: true, autoplay: true }));
 
       document.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowRight') {
@@ -190,6 +332,7 @@
       });
 
       loadPuzzle(0);
+      checkAudioBackend();
     }
 
     main().catch(err => {
