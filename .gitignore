@@ -1,0 +1,9 @@
+.DS_Store
+*.mp4
+*.pdf
+frames/
+transcripts/
+paper.txt
+notes.md
+smoketest.png
+node_modules/

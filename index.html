@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>DeepMind Puzzle Test</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css" />
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem;
+      gap: 1rem;
+    }
+    #board { width: 480px; max-width: 100vw; }
+    .panel {
+      max-width: 480px;
+      width: 100%;
+      background: #1c1c1c;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+      position: sticky;
+      top: 1rem;
+    }
+    #status, #commentary {
+      min-height: 2.2em;
+      overflow-wrap: anywhere;
+      margin: 0.2rem 0;
+    }
+    #commentary { min-height: 3em; }
+    button {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      border: none;
+      cursor: pointer;
+      margin-right: 0.5rem;
+    }
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>DeepMind Puzzle Test</h1>
+  <div id="board"></div>
+  <div class="panel">
+    <div id="puzzle-meta"></div>
+    <p id="status"></p>
+    <p id="commentary"></p>
+    <div class="controls">
+      <button id="prev-move">◀︎ Prev (←)</button>
+      <button id="next-move">Next (→)</button>
+      <button id="reset">Reset</button>
+    </div>
+  </div>
+
+  <!-- Use a non-module UMD build of chess.js for browser globals -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+  <script>
+    async function main() {
+      const res = await fetch('puzzles.json');
+      const puzzles = await res.json();
+      const puzzle = puzzles[0];
+
+      const game = new Chess(puzzle.fen);
+      const board = Chessboard('board', {
+        position: puzzle.fen,
+        draggable: false,
+        pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png'
+      });
+      // expose for debugging/smoke tests
+      window._game = game;
+      window._board = board;
+
+      const metaEl = document.getElementById('puzzle-meta');
+      const statusEl = document.getElementById('status');
+      const commentaryEl = document.getElementById('commentary');
+      const nextBtn = document.getElementById('next-move');
+      const prevBtn = document.getElementById('prev-move');
+      const resetBtn = document.getElementById('reset');
+
+      metaEl.innerHTML = `
+        <strong>ID:</strong> ${puzzle.id}<br/>
+        <strong>Source:</strong> ${puzzle.source}<br/>
+        <strong>Side to move:</strong> ${puzzle.side_to_move === 'w' ? 'White' : 'Black'}<br/>
+        <strong>Result:</strong> ${puzzle.result_type}<br/>
+        <strong>Themes:</strong> ${puzzle.themes.join(', ')}
+      `;
+
+      let moveIndex = 0;
+
+      function updateStatus() {
+        if (moveIndex === 0) {
+          statusEl.textContent = 'White to move and win. Click "Play next move" to see the solution.';
+          commentaryEl.textContent = '';
+        } else if (moveIndex < puzzle.san_solution.length) {
+          statusEl.textContent = `Played: ${puzzle.san_solution.slice(0, moveIndex).join(' ')}`;
+          const comment = (puzzle.commentary || [])[moveIndex - 1];
+          commentaryEl.textContent = comment ? `Commentary: ${comment}` : '';
+        } else {
+          statusEl.textContent = 'Line complete. Final position shown.';
+          const comment = (puzzle.commentary || [])[puzzle.commentary.length - 1];
+          commentaryEl.textContent = comment ? `Commentary: ${comment}` : '';
+        }
+      }
+
+      nextBtn.addEventListener('click', () => {
+        if (moveIndex >= puzzle.san_solution.length) return;
+        const san = puzzle.san_solution[moveIndex];
+        try {
+          game.move(san);
+          board.position(game.fen());
+          moveIndex += 1;
+          updateStatus();
+        } catch (e) {
+          console.error('Illegal SAN in sequence:', san, e);
+          statusEl.textContent = 'Error: illegal move in solution sequence. Check console.';
+        }
+      });
+
+      prevBtn.addEventListener('click', () => {
+        if (moveIndex <= 0) return;
+        game.undo();
+        moveIndex -= 1;
+        board.position(game.fen());
+        updateStatus();
+      });
+
+      resetBtn.addEventListener('click', () => {
+        game.reset();
+        game.load(puzzle.fen);
+        board.position(puzzle.fen);
+        moveIndex = 0;
+        updateStatus();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') {
+          nextBtn.click();
+        } else if (e.key === 'ArrowLeft') {
+          prevBtn.click();
+        }
+      });
+
+      updateStatus();
+    }
+
+    main().catch(err => {
+      console.error(err);
+      document.getElementById('status').textContent = 'Error loading puzzle.';
+    });
+  </script>
+</body>
+</html>

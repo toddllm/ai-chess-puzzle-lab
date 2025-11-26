@@ -1,0 +1,41 @@
+[
+  {
+    "id": "deepmind-double-rook-sac-1",
+    "source": "DeepMind Generative Chess Puzzles booklet",
+    "fen": "1r1r2k1/Q2p1R1p/2p2R2/1p3pB1/1P4q1/8/5K2/8 w - - 0 1",
+    "side_to_move": "w",
+    "result_type": "win",
+    "san_solution": [
+      "Rg6+",
+      "hxg6",
+      "Qa1",
+      "Kxf7",
+      "Qf6+",
+      "Kg8",
+      "Bh6",
+      "Re8",
+      "Qg7#"
+    ],
+    "commentary": [
+      "Rg6+: double rook sac; both rooks en prise, the only winning move.",
+      "…hxg6: grabbing a rook; any capture leads to the same attacking structure.",
+      "Qa1!!: quiet retreat, effectively sacrificing the second rook while lining up the long diagonal.",
+      "…Kxf7: accepting the second rook; other captures transpose.",
+      "Qf6+: queen invades with tempo, driving the king back.",
+      "…Kg8: only square; alternatives lose faster.",
+      "Bh6!: shuts down counterplay and keeps the attack rolling—white is winning.",
+      "…Re8: best try to guard g7, but too slow.",
+      "Qg7#: mate on the dark-squared diagonal; queen is protected by Bh6."
+    ],
+    "themes": [
+      "double_rook_sac",
+      "only_move",
+      "quiet_queen_retreat",
+      "king_attack"
+    ],
+    "precomputed_metrics": {
+      "legal": true,
+      "notes": "DeepMind puzzle; 1.Rg6+ is unique winning move; deep engine eval is winning for White."
+    }
+  }
+]
