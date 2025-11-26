@@ -140,7 +140,9 @@
       selectEl.innerHTML = puzzles.map((p, idx) => `<option value="${idx}">${idx + 1}. ${p.id}</option>`).join('');
 
       let moveIndex = 0;
-      let audioEnabled = false;
+      let audioBackendAvailable = false;
+      let audioManifestLoaded = false;
+      const audioManifest = new Map();
       const audioCache = new Map();
 
       function audioCacheKey(idx = moveIndex) {
@@ -152,39 +154,132 @@
         return (puzzle.commentary || [])[moveIndex - 1] || '';
       }
 
+      function getStaticClip(idx = moveIndex) {
+        const clips = audioManifest.get(puzzle.id) || [];
+        return clips.find(c => c.move_index === idx) || null;
+      }
+
+      function refreshAudioBadge() {
+        const hasStatic = (audioManifest.get(puzzle.id) || []).length > 0;
+        if (audioBackendAvailable) {
+          audioBackendEl.textContent = 'Audio: backend';
+          audioBackendEl.className = 'pill pill-ok';
+        } else if (hasStatic) {
+          audioBackendEl.textContent = 'Audio: static';
+          audioBackendEl.className = 'pill pill-warn';
+        } else {
+          audioBackendEl.textContent = 'Audio offline';
+          audioBackendEl.className = 'pill pill-off';
+        }
+      }
+
+      function updateAudioStatusText() {
+        if (moveIndex === 0) {
+          audioStatusEl.textContent = 'Play the first move to unlock audio.';
+          return;
+        }
+        if (getStaticClip()) {
+          audioStatusEl.textContent = 'Preset commentary ready. Hit Play to listen.';
+          return;
+        }
+        if (audioBackendAvailable) {
+          audioStatusEl.textContent = 'Audio via backend ready.';
+          return;
+        }
+        audioStatusEl.textContent = 'Audio unavailable for this move.';
+      }
+
       function resetAudio() {
         audioEl.pause();
         audioEl.removeAttribute('src');
         audioEl.load();
-        audioStatusEl.textContent = 'Enable a move to hear the narration.';
-        playAudioBtn.disabled = true;
-        regenAudioBtn.disabled = true;
+        updateAudioStatusText();
+        updateAudioButtons();
       }
 
       function updateAudioButtons() {
-        const disabled = !audioEnabled || moveIndex === 0;
-        playAudioBtn.disabled = disabled;
-        regenAudioBtn.disabled = disabled;
+        const hasStatic = !!getStaticClip();
+        const canPlay = moveIndex > 0 && (audioBackendAvailable || hasStatic);
+        playAudioBtn.disabled = !canPlay;
+        regenAudioBtn.disabled = moveIndex === 0 || !audioBackendAvailable;
       }
 
       async function playCommentary({ force = false, autoplay = false } = {}) {
-        if (!audioEnabled) return;
         if (moveIndex === 0) {
           audioStatusEl.textContent = 'Play the first move to unlock audio.';
           updateAudioButtons();
           return;
         }
+
         const text = currentCommentary().trim();
         if (!text) {
           audioStatusEl.textContent = 'No commentary available for this move.';
           updateAudioButtons();
           return;
         }
-        const cacheKey = audioCacheKey();
-        if (audioCache.has(cacheKey) && !force) {
-          const cachedUrl = audioCache.get(cacheKey);
-          audioEl.src = `${cachedUrl}?t=${Date.now()}`;
-          audioStatusEl.textContent = 'Playing cached audio.';
+
+        const staticClip = getStaticClip();
+
+        // Prefer backend when available; fall back to static clips.
+        if (audioBackendAvailable) {
+          const cacheKey = audioCacheKey();
+          if (audioCache.has(cacheKey) && !force) {
+            const cachedUrl = audioCache.get(cacheKey);
+            audioEl.src = `${cachedUrl}?t=${Date.now()}`;
+            audioStatusEl.textContent = 'Playing cached audio.';
+            if (autoplay) {
+              audioEl.play().catch(() => {});
+            }
+            updateAudioButtons();
+            return;
+          }
+
+          audioStatusEl.textContent = 'Requesting speech...';
+          playAudioBtn.disabled = regenAudioBtn.disabled = true;
+          try {
+            const res = await fetch('/api/tts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                text,
+                puzzle_id: puzzle.id,
+                move_index: moveIndex,
+                move_san: puzzle.san_solution[moveIndex - 1] || '',
+                force
+              })
+            });
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}));
+              throw new Error(err.error || `TTS failed (${res.status})`);
+            }
+            const data = await res.json();
+            if (!data.url) {
+              throw new Error('TTS backend did not return audio.');
+            }
+            audioCache.set(cacheKey, data.url);
+            audioEl.src = `${data.url}?t=${Date.now()}`;
+            audioStatusEl.textContent = `Audio ready via ${data.engine || 'tts'}${data.cached ? ' (cached).' : '.'}`;
+            if (autoplay) {
+              audioEl.play().catch(() => {});
+            }
+            updateAudioButtons();
+            return;
+          } catch (err) {
+            console.error(err);
+            if (!staticClip) {
+              audioStatusEl.textContent = `Audio error: ${err.message}`;
+              updateAudioButtons();
+              return;
+            }
+            audioStatusEl.textContent = 'Backend failed; playing preset commentary instead.';
+          } finally {
+            updateAudioButtons();
+          }
+        }
+
+        if (staticClip) {
+          audioEl.src = `${staticClip.file}?t=${Date.now()}`;
+          audioStatusEl.textContent = 'Playing preset commentary.';
           if (autoplay) {
             audioEl.play().catch(() => {});
           }
@@ -192,40 +287,8 @@
           return;
         }
 
-        audioStatusEl.textContent = 'Requesting speech...';
-        playAudioBtn.disabled = regenAudioBtn.disabled = true;
-        try {
-          const res = await fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              text,
-              puzzle_id: puzzle.id,
-              move_index: moveIndex,
-              move_san: puzzle.san_solution[moveIndex - 1] || '',
-              force
-            })
-          });
-          if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.error || `TTS failed (${res.status})`);
-          }
-          const data = await res.json();
-          if (!data.url) {
-            throw new Error('TTS backend did not return audio.');
-          }
-          audioCache.set(cacheKey, data.url);
-          audioEl.src = `${data.url}?t=${Date.now()}`;
-          audioStatusEl.textContent = `Audio ready via ${data.engine || 'tts'}${data.cached ? ' (cached).' : '.'}`;
-          if (autoplay) {
-            audioEl.play().catch(() => {});
-          }
-        } catch (err) {
-          console.error(err);
-          audioStatusEl.textContent = `Audio error: ${err.message}`;
-        } finally {
-          updateAudioButtons();
-        }
+        audioStatusEl.textContent = 'Audio unavailable for this move.';
+        updateAudioButtons();
       }
 
       async function checkAudioBackend() {
@@ -233,17 +296,16 @@
           const res = await fetch('/health', { cache: 'no-store' });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const data = await res.json().catch(() => ({}));
-          audioEnabled = true;
+          audioBackendAvailable = true;
           audioBackendEl.textContent = data.engine ? `Audio: ${data.engine}` : 'Audio ready';
           audioBackendEl.className = 'pill pill-ok';
-          updateAudioButtons();
         } catch (err) {
-          audioEnabled = false;
-          audioBackendEl.textContent = 'Audio offline';
-          audioBackendEl.className = 'pill pill-off';
-          audioStatusEl.textContent = 'Audio backend unavailable; using silent mode.';
-          updateAudioButtons();
+          audioBackendAvailable = false;
+          refreshAudioBadge();
+          updateAudioStatusText();
         }
+        refreshAudioBadge();
+        updateAudioButtons();
       }
 
       function updateStatus() {
@@ -259,6 +321,8 @@
           const comment = (puzzle.commentary || [])[puzzle.commentary.length - 1];
           commentaryEl.textContent = comment ? `Commentary: ${comment}` : '';
         }
+        updateAudioStatusText();
+        updateAudioButtons();
       }
 
       function loadPuzzle(idx) {
@@ -331,8 +395,27 @@
         loadPuzzle(puzzleIndex + 1);
       });
 
+      async function loadAudioManifest() {
+        try {
+          const res = await fetch('audio_manifest.json', { cache: 'no-store' });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          data.forEach(entry => {
+            audioManifest.set(entry.id, entry.clips || []);
+          });
+          audioManifestLoaded = true;
+        } catch (err) {
+          console.warn('Audio manifest missing or unreadable:', err);
+          audioManifestLoaded = false;
+        } finally {
+          refreshAudioBadge();
+          updateAudioButtons();
+        }
+      }
+
+      await loadAudioManifest();
       loadPuzzle(0);
-      checkAudioBackend();
+      await checkAudioBackend();
     }
 
     main().catch(err => {

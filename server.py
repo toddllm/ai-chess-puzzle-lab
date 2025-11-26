@@ -29,6 +29,7 @@ from flask import Flask, jsonify, request, send_from_directory
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT_CACHE_DIR = ROOT / "generated_audio"
+STATIC_AUDIO_DIR = ROOT / "audio"
 
 
 def safe_slug(value: str) -> str:
@@ -174,9 +175,23 @@ def create_app(engine_name: str, model_name: str, max_tokens: int, cache_dir: Pa
     def puzzles():
         return send_from_directory(ROOT, "puzzles.json")
 
+    @app.route("/audio_manifest.json", methods=["GET"])
+    def audio_manifest():
+        manifest_path = ROOT / "audio_manifest.json"
+        if manifest_path.exists():
+            return send_from_directory(ROOT, "audio_manifest.json")
+        return jsonify({"error": "audio manifest not found"}), 404
+
     @app.route("/audio/<path:filename>", methods=["GET"])
     def audio(filename: str):
-        return send_from_directory(cache_dir, filename)
+        # Prefer freshly generated audio, but fall back to static clips if present.
+        generated_path = cache_dir / filename
+        static_path = STATIC_AUDIO_DIR / filename
+        if generated_path.exists():
+            return send_from_directory(cache_dir, filename)
+        if static_path.exists():
+            return send_from_directory(STATIC_AUDIO_DIR, filename)
+        return jsonify({"error": "audio not found"}), 404
 
     @app.route("/api/tts", methods=["POST"])
     def tts():
