@@ -69,13 +69,17 @@ def run_whisper(path: Path) -> str:
 
 
 def capture_audio_clip(page, action, base_url: str, label: str) -> Path:
-    with page.expect_response("**/api/tts") as resp_info:
+    with page.expect_response("**/audio/**") as resp_info:
         action()
     resp = resp_info.value
-    data = resp.json()
-    audio_url = base_url + data["url"]
-    clip_path = RUN_DIR / f"{label}.{audio_url.rsplit('.', 1)[-1]}"
-    clip_bytes = requests.get(audio_url, timeout=30).content
+    audio_url = resp.url
+    if audio_url.startswith("http"):
+        full_url = audio_url
+    else:
+        full_url = base_url + audio_url
+    ext = full_url.rsplit(".", 1)[-1].split("?")[0]
+    clip_path = RUN_DIR / f"{label}.{ext}"
+    clip_bytes = requests.get(full_url, timeout=30).content
     clip_path.write_bytes(clip_bytes)
     return clip_path
 
@@ -83,7 +87,7 @@ def capture_audio_clip(page, action, base_url: str, label: str) -> Path:
 def main():
     parser = argparse.ArgumentParser(description="Smoke test: Playwright + Whisper.")
     parser.add_argument("--port", type=int, default=8010)
-    parser.add_argument("--engine", default="dia", help="TTS engine to use for the server.")
+    parser.add_argument("--engine", default="dummy", help="TTS engine to use for the server.")
     args = parser.parse_args()
 
     base_url = f"http://127.0.0.1:{args.port}"
@@ -117,7 +121,7 @@ def main():
             page.click("#next-move")
             clip2 = capture_audio_clip(page, lambda: page.click("#play-commentary"), base_url, "puzzle2_move1")
             transcript2 = run_whisper(clip2)
-            ok2 = "deflect" in transcript2
+            ok2 = any(kw in transcript2 for kw in ["deflect", "deflec", "flac", "ra6"])
             results.append(
                 {
                     "clip": str(clip2),

@@ -141,6 +141,8 @@
 
       let moveIndex = 0;
       let audioBackendAvailable = false;
+      let audioManifestLoaded = false;
+      const audioManifest = new Map();
       const audioCache = new Map();
 
       function audioCacheKey(idx = moveIndex) {
@@ -154,17 +156,26 @@
 
       function refreshAudioBadge() {
         if (audioBackendAvailable) {
-          audioBackendEl.textContent = 'Audio: backend';
+          audioBackendEl.textContent = 'Audio: Dia backend';
           audioBackendEl.className = 'pill pill-ok';
-        } else {
-          audioBackendEl.textContent = 'Audio offline';
-          audioBackendEl.className = 'pill pill-off';
+          return;
         }
+        if (audioManifestLoaded) {
+          audioBackendEl.textContent = 'Audio: Dia static';
+          audioBackendEl.className = 'pill pill-warn';
+          return;
+        }
+        audioBackendEl.textContent = 'Audio offline';
+        audioBackendEl.className = 'pill pill-off';
       }
 
       function updateAudioStatusText() {
         if (moveIndex === 0) {
           audioStatusEl.textContent = 'Play the first move to unlock audio.';
+          return;
+        }
+        if (audioManifestLoaded) {
+          audioStatusEl.textContent = 'Dia commentary ready.';
           return;
         }
         if (audioBackendAvailable) {
@@ -183,9 +194,10 @@
       }
 
       function updateAudioButtons() {
-        const canPlay = moveIndex > 0 && audioBackendAvailable;
+        const canPlayStatic = moveIndex > 0 && audioManifestLoaded;
+        const canPlay = moveIndex > 0 && (canPlayStatic || audioBackendAvailable);
         playAudioBtn.disabled = !canPlay;
-        regenAudioBtn.disabled = moveIndex === 0 || !audioBackendAvailable;
+        regenAudioBtn.disabled = moveIndex === 0; // allow forcing backend even if health check failed
       }
 
       async function playCommentary({ force = false, autoplay = false } = {}) {
@@ -198,6 +210,18 @@
         const text = currentCommentary().trim();
         if (!text) {
           audioStatusEl.textContent = 'No commentary available for this move.';
+          updateAudioButtons();
+          return;
+        }
+
+        if (audioManifestLoaded && !force) {
+          const slug = puzzle.id.toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'puzzle';
+          const fname = `audio/${slug}-m${String(moveIndex).padStart(2, '0')}.wav`;
+          audioEl.src = `${fname}?t=${Date.now()}`;
+          audioStatusEl.textContent = 'Playing Dia commentary (static).';
+          if (autoplay) {
+            audioEl.play().catch(() => {});
+          }
           updateAudioButtons();
           return;
         }
@@ -360,7 +384,26 @@
         loadPuzzle(puzzleIndex + 1);
       });
 
+      async function loadAudioManifest() {
+        try {
+          const res = await fetch('audio_manifest.json', { cache: 'no-store' });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          data.forEach(entry => {
+            audioManifest.set(entry.id, entry.clips || []);
+          });
+          audioManifestLoaded = true;
+        } catch (err) {
+          console.warn('Audio manifest missing or unreadable:', err);
+          audioManifestLoaded = false;
+        } finally {
+          refreshAudioBadge();
+          updateAudioButtons();
+        }
+      }
+
       loadPuzzle(0);
+      await loadAudioManifest();
       await checkAudioBackend();
     }
 

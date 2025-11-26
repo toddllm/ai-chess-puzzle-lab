@@ -1,0 +1,179 @@
+[
+  {
+    "id": "deepmind-double-rook-sac-1",
+    "slug": "deepmind-double-rook-sac-1",
+    "clips": [
+      {
+        "move_index": 1,
+        "file": "audio/deepmind-double-rook-sac-1-m01.wav",
+        "text": "Rg6+: double rook sac; both rooks en prise, the only winning move."
+      },
+      {
+        "move_index": 2,
+        "file": "audio/deepmind-double-rook-sac-1-m02.wav",
+        "text": "\u2026hxg6: grabbing a rook; any capture leads to the same attacking structure."
+      },
+      {
+        "move_index": 3,
+        "file": "audio/deepmind-double-rook-sac-1-m03.wav",
+        "text": "Qa1!!: quiet retreat, effectively sacrificing the second rook while lining up the long diagonal."
+      },
+      {
+        "move_index": 4,
+        "file": "audio/deepmind-double-rook-sac-1-m04.wav",
+        "text": "\u2026Kxf7: accepting the second rook; other captures transpose."
+      },
+      {
+        "move_index": 5,
+        "file": "audio/deepmind-double-rook-sac-1-m05.wav",
+        "text": "Qf6+: queen invades with tempo, driving the king back."
+      },
+      {
+        "move_index": 6,
+        "file": "audio/deepmind-double-rook-sac-1-m06.wav",
+        "text": "\u2026Kg8: only square; alternatives lose faster."
+      },
+      {
+        "move_index": 7,
+        "file": "audio/deepmind-double-rook-sac-1-m07.wav",
+        "text": "Bh6!: shuts down counterplay and keeps the attack rolling\u2014white is winning."
+      },
+      {
+        "move_index": 8,
+        "file": "audio/deepmind-double-rook-sac-1-m08.wav",
+        "text": "\u2026Re8: best try to guard g7, but too slow."
+      },
+      {
+        "move_index": 9,
+        "file": "audio/deepmind-double-rook-sac-1-m09.wav",
+        "text": "Qg7#: mate on the dark-squared diagonal; queen is protected by Bh6."
+      }
+    ]
+  },
+  {
+    "id": "paper-mate-queenside-passers",
+    "slug": "paper-mate-queenside-passers",
+    "clips": [
+      {
+        "move_index": 1,
+        "file": "audio/paper-mate-queenside-passers-m01.wav",
+        "text": "Ra6!: deflects the a8-king\u2019s defender; black is forced to take."
+      },
+      {
+        "move_index": 2,
+        "file": "audio/paper-mate-queenside-passers-m02.wav",
+        "text": "\u2026bxa6: only capture; the b-pawn is now unstoppable."
+      },
+      {
+        "move_index": 3,
+        "file": "audio/paper-mate-queenside-passers-m03.wav",
+        "text": "b7#: quiet pawn mate, king trapped on b8."
+      }
+    ]
+  },
+  {
+    "id": "paper-mate-queen-bishop-net",
+    "slug": "paper-mate-queen-bishop-net",
+    "clips": [
+      {
+        "move_index": 1,
+        "file": "audio/paper-mate-queen-bishop-net-m01.wav",
+        "text": "Bh1!: retreats to set up the g2\u2013a8 diagonal, keeping control of checks."
+      },
+      {
+        "move_index": 2,
+        "file": "audio/paper-mate-queen-bishop-net-m02.wav",
+        "text": "\u2026Kxa2: grabbing the knight, but walking into the net."
+      },
+      {
+        "move_index": 3,
+        "file": "audio/paper-mate-queen-bishop-net-m03.wav",
+        "text": "Qg2#: long-diagonal mate; bishop on h1 covers g2, queen delivers."
+      }
+    ]
+  },
+  {
+    "id": "paper-mate-rook-sweep",
+    "slug": "paper-mate-rook-sweep",
+    "clips": [
+      {
+        "move_index": 1,
+        "file": "audio/paper-mate-rook-sweep-m01.wav",
+        "text": "Rf4!: rook lift to deflect the dark-squared bishop."
+      },
+      {
+        "move_index": 2,
+        "file": "audio/paper-mate-rook-sweep-m02.wav",
+        "text": "\u2026Bxf4: only try; bishop leaves c5 unguarded."
+      },
+      {
+        "move_index": 3,
+        "file": "audio/paper-mate-rook-sweep-m03.wav",
+        "text": "Qc5#: diagonal mate; king boxed by its own pieces."
+      }
+    ]
+  },
+  {
+    "id": "paper-mate-bishop-rook-battery",
+    "slug": "paper-mate-bishop-rook-battery",
+    "clips": [
+      {
+        "move_index": 1,
+        "file": "audio/paper-mate-bishop-rook-battery-m01.wav",
+        "text": "Rc3!: rook sacrifice to open the c-file and lure the b-pawn."
+      },
+      {
+        "move_index": 2,
+        "file": "audio/paper-mate-bishop-rook-battery-m02.wav",
+        "text": "\u2026bxc3: forced capture; diagonal is now opened."
+      },
+      {
+        "move_index": 3,
+        "file": "audio/paper-mate-bishop-rook-battery-m03.wav",
+        "text": "Bc2#: bishop mate along the long diagonal; rook removal cleared the path."
+      }
+    ]
+  },
+  {
+    "id": "paper-mate-queen-rook-coordination",
+    "slug": "paper-mate-queen-rook-coordination",
+    "clips": [
+      {
+        "move_index": 1,
+        "file": "audio/paper-mate-queen-rook-coordination-m01.wav",
+        "text": "Rf6!: rook lift to set up Qc4; also blocks counterplay."
+      },
+      {
+        "move_index": 2,
+        "file": "audio/paper-mate-queen-rook-coordination-m02.wav",
+        "text": "\u2026Kc5: best king flight, but still doomed."
+      },
+      {
+        "move_index": 3,
+        "file": "audio/paper-mate-queen-rook-coordination-m03.wav",
+        "text": "Qc4#: queen slides to c4 delivering mate; rook guards f-file squares."
+      }
+    ]
+  },
+  {
+    "id": "paper-mate-knight-net",
+    "slug": "paper-mate-knight-net",
+    "clips": [
+      {
+        "move_index": 1,
+        "file": "audio/paper-mate-knight-net-m01.wav",
+        "text": "Nd4!: deflects the queen and opens the g-file for the rook."
+      },
+      {
+        "move_index": 2,
+        "file": "audio/paper-mate-knight-net-m02.wav",
+        "text": "\u2026Qxb7: taking the loose pawn; queen is off the defense."
+      },
+      {
+        "move_index": 3,
+        "file": "audio/paper-mate-knight-net-m03.wav",
+        "text": "Rg4#: rook swings to g4 for mate; knights and queen cut off escape."
+      }
+    ]
+  }
+]
