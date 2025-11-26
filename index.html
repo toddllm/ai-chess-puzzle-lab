@@ -149,6 +149,10 @@
         return `${puzzle.id}:${idx}`;
       }
 
+      function slugify(id) {
+        return (id || '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'puzzle';
+      }
+
       function currentCommentary() {
         if (moveIndex <= 0) return '';
         return (puzzle.commentary || [])[moveIndex - 1] || '';
@@ -156,7 +160,12 @@
 
       function getStaticClip(idx = moveIndex) {
         const clips = audioManifest.get(puzzle.id) || [];
-        return clips.find(c => c.move_index === idx) || null;
+        const found = clips.find(c => c.move_index === idx);
+        if (found) return found;
+        // fallback to deterministic filename if manifest missing
+        const slug = slugify(puzzle.id);
+        const fname = `audio/${slug}-m${String(idx).padStart(2, '0')}.mp3`;
+        return { move_index: idx, file: fname };
       }
 
       function refreshAudioBadge() {
@@ -220,7 +229,18 @@
 
         const staticClip = getStaticClip();
 
-        // Prefer backend when available; fall back to static clips.
+        // Always prefer pre-generated static clips when available (works on GitHub Pages).
+        if (staticClip) {
+          audioEl.src = `${staticClip.file}?t=${Date.now()}`;
+          audioStatusEl.textContent = 'Playing preset commentary.';
+          if (autoplay) {
+            audioEl.play().catch(() => {});
+          }
+          updateAudioButtons();
+          return;
+        }
+
+        // Fall back to backend only when no static audio is present.
         if (audioBackendAvailable) {
           const cacheKey = audioCacheKey();
           if (audioCache.has(cacheKey) && !force) {
@@ -262,28 +282,12 @@
             if (autoplay) {
               audioEl.play().catch(() => {});
             }
-            updateAudioButtons();
-            return;
           } catch (err) {
             console.error(err);
-            if (!staticClip) {
-              audioStatusEl.textContent = `Audio error: ${err.message}`;
-              updateAudioButtons();
-              return;
-            }
-            audioStatusEl.textContent = 'Backend failed; playing preset commentary instead.';
+            audioStatusEl.textContent = `Audio error: ${err.message}`;
           } finally {
             updateAudioButtons();
           }
-        }
-
-        if (staticClip) {
-          audioEl.src = `${staticClip.file}?t=${Date.now()}`;
-          audioStatusEl.textContent = 'Playing preset commentary.';
-          if (autoplay) {
-            audioEl.play().catch(() => {});
-          }
-          updateAudioButtons();
           return;
         }
 
