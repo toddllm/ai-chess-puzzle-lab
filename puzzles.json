@@ -37,5 +37,89 @@
       "legal": true,
       "notes": "DeepMind puzzle; 1.Rg6+ is unique winning move; deep engine eval is winning for White."
     }
+  },
+  {
+    "id": "paper-mate-queenside-passers",
+    "source": "DeepMind paper appendix (mate-in-2)",
+    "fen": "kbK5/pp6/1P6/8/8/8/8/R7 w - - 0 1",
+    "side_to_move": "w",
+    "result_type": "win",
+    "san_solution": ["Ra6", "bxa6", "b7#"],
+    "commentary": [
+      "Ra6!: deflects the a8-king’s defender; black is forced to take.",
+      "…bxa6: only capture; the b-pawn is now unstoppable.",
+      "b7#: quiet pawn mate, king trapped on b8."
+    ],
+    "themes": ["deflection", "pawn_mate", "quiet_move"]
+  },
+  {
+    "id": "paper-mate-queen-bishop-net",
+    "source": "DeepMind paper appendix (mate-in-2)",
+    "fen": "8/8/2Q5/3B4/1K6/2P5/Nk6/2R5 w - - 0 1",
+    "side_to_move": "w",
+    "result_type": "win",
+    "san_solution": ["Bh1", "Kxa2", "Qg2#"],
+    "commentary": [
+      "Bh1!: retreats to set up the g2–a8 diagonal, keeping control of checks.",
+      "…Kxa2: grabbing the knight, but walking into the net.",
+      "Qg2#: long-diagonal mate; bishop on h1 covers g2, queen delivers."
+    ],
+    "themes": ["quiet_move", "diagonal_net", "bishop_queen_mate"]
+  },
+  {
+    "id": "paper-mate-rook-sweep",
+    "source": "DeepMind paper appendix (mate-in-2)",
+    "fen": "2b3N1/8/1r2pN1b/1p2kp2/1P1R4/8/4K3/6Q1 w - - 0 1",
+    "side_to_move": "w",
+    "result_type": "win",
+    "san_solution": ["Rf4", "Bxf4", "Qc5#"],
+    "commentary": [
+      "Rf4!: rook lift to deflect the dark-squared bishop.",
+      "…Bxf4: only try; bishop leaves c5 unguarded.",
+      "Qc5#: diagonal mate; king boxed by its own pieces."
+    ],
+    "themes": ["deflection", "rook_lift", "queen_mate"]
+  },
+  {
+    "id": "paper-mate-bishop-rook-battery",
+    "source": "DeepMind paper appendix (mate-in-2)",
+    "fen": "5B2/8/K7/8/kpp5/7R/8/1B6 w - - 0 1",
+    "side_to_move": "w",
+    "result_type": "win",
+    "san_solution": ["Rc3", "bxc3", "Bc2#"],
+    "commentary": [
+      "Rc3!: rook sacrifice to open the c-file and lure the b-pawn.",
+      "…bxc3: forced capture; diagonal is now opened.",
+      "Bc2#: bishop mate along the long diagonal; rook removal cleared the path."
+    ],
+    "themes": ["clearance", "sacrifice", "bishop_mate"]
+  },
+  {
+    "id": "paper-mate-queen-rook-coordination",
+    "source": "DeepMind paper appendix (mate-in-2)",
+    "fen": "8/p4p2/Q7/3P4/1p1kB3/1K4N1/5R2/8 w - - 0 1",
+    "side_to_move": "w",
+    "result_type": "win",
+    "san_solution": ["Rf6", "Kc5", "Qc4#"],
+    "commentary": [
+      "Rf6!: rook lift to set up Qc4; also blocks counterplay.",
+      "…Kc5: best king flight, but still doomed.",
+      "Qc4#: queen slides to c4 delivering mate; rook guards f-file squares."
+    ],
+    "themes": ["rook_lift", "queen_mate", "king_hunt"]
+  },
+  {
+    "id": "paper-mate-knight-net",
+    "source": "DeepMind paper appendix (mate-in-2)",
+    "fen": "8/qQ5p/3pN2K/3pp1R1/4k3/7N/1b1PP3/8 w - - 0 1",
+    "side_to_move": "w",
+    "result_type": "win",
+    "san_solution": ["Nd4", "Qxb7", "Rg4#"],
+    "commentary": [
+      "Nd4!: deflects the queen and opens the g-file for the rook.",
+      "…Qxb7: taking the loose pawn; queen is off the defense.",
+      "Rg4#: rook swings to g4 for mate; knights and queen cut off escape."
+    ],
+    "themes": ["deflection", "rook_swing", "knight_net"]
   }
 ]
