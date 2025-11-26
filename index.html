@@ -141,16 +141,10 @@
 
       let moveIndex = 0;
       let audioBackendAvailable = false;
-      let audioManifestLoaded = false;
-      const audioManifest = new Map();
       const audioCache = new Map();
 
       function audioCacheKey(idx = moveIndex) {
         return `${puzzle.id}:${idx}`;
-      }
-
-      function slugify(id) {
-        return (id || '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'puzzle';
       }
 
       function currentCommentary() {
@@ -158,24 +152,10 @@
         return (puzzle.commentary || [])[moveIndex - 1] || '';
       }
 
-      function getStaticClip(idx = moveIndex) {
-        const clips = audioManifest.get(puzzle.id) || [];
-        const found = clips.find(c => c.move_index === idx);
-        if (found) return found;
-        // fallback to deterministic filename if manifest missing
-        const slug = slugify(puzzle.id);
-        const fname = `audio/${slug}-m${String(idx).padStart(2, '0')}.mp3`;
-        return { move_index: idx, file: fname };
-      }
-
       function refreshAudioBadge() {
-        const hasStatic = (audioManifest.get(puzzle.id) || []).length > 0;
         if (audioBackendAvailable) {
           audioBackendEl.textContent = 'Audio: backend';
           audioBackendEl.className = 'pill pill-ok';
-        } else if (hasStatic) {
-          audioBackendEl.textContent = 'Audio: static';
-          audioBackendEl.className = 'pill pill-warn';
         } else {
           audioBackendEl.textContent = 'Audio offline';
           audioBackendEl.className = 'pill pill-off';
@@ -185,10 +165,6 @@
       function updateAudioStatusText() {
         if (moveIndex === 0) {
           audioStatusEl.textContent = 'Play the first move to unlock audio.';
-          return;
-        }
-        if (getStaticClip()) {
-          audioStatusEl.textContent = 'Preset commentary ready. Hit Play to listen.';
           return;
         }
         if (audioBackendAvailable) {
@@ -207,8 +183,7 @@
       }
 
       function updateAudioButtons() {
-        const hasStatic = !!getStaticClip();
-        const canPlay = moveIndex > 0 && (audioBackendAvailable || hasStatic);
+        const canPlay = moveIndex > 0 && audioBackendAvailable;
         playAudioBtn.disabled = !canPlay;
         regenAudioBtn.disabled = moveIndex === 0 || !audioBackendAvailable;
       }
@@ -227,20 +202,6 @@
           return;
         }
 
-        const staticClip = getStaticClip();
-
-        // Always prefer pre-generated static clips when available (works on GitHub Pages).
-        if (staticClip) {
-          audioEl.src = `${staticClip.file}?t=${Date.now()}`;
-          audioStatusEl.textContent = 'Playing preset commentary.';
-          if (autoplay) {
-            audioEl.play().catch(() => {});
-          }
-          updateAudioButtons();
-          return;
-        }
-
-        // Fall back to backend only when no static audio is present.
         if (audioBackendAvailable) {
           const cacheKey = audioCacheKey();
           if (audioCache.has(cacheKey) && !force) {
@@ -399,25 +360,6 @@
         loadPuzzle(puzzleIndex + 1);
       });
 
-      async function loadAudioManifest() {
-        try {
-          const res = await fetch('audio_manifest.json', { cache: 'no-store' });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          data.forEach(entry => {
-            audioManifest.set(entry.id, entry.clips || []);
-          });
-          audioManifestLoaded = true;
-        } catch (err) {
-          console.warn('Audio manifest missing or unreadable:', err);
-          audioManifestLoaded = false;
-        } finally {
-          refreshAudioBadge();
-          updateAudioButtons();
-        }
-      }
-
-      await loadAudioManifest();
       loadPuzzle(0);
       await checkAudioBackend();
     }
