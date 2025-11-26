@@ -22,6 +22,16 @@ https://toddllm.github.io/ai-chess-puzzle-lab/
 - Commentary updates per move.
 - Reset returns to the initial position.
 
+## TTS Pipeline (optional)
+
+- `generate_moves.py` builds per-move prompts, dummy audio (silence), and a manifest.
+- Sample input: `sample_moves_double_rook_sac.json`.
+- Usage:
+  ```bash
+  python generate_moves.py --game-id double_rook_sac --moves sample_moves_double_rook_sac.json --out generated/
+  ```
+- Replace the placeholder TTS call in `generate_moves.py` with your TTS; files land in `generated/<game_id>/` with `manifest.json`.
+
 ## Puzzle Data
 
 - Puzzles live in `puzzles.json` (FEN, SAN lines, themes, commentary).

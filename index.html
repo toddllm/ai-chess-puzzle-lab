@@ -52,6 +52,16 @@
   <h1>DeepMind Puzzle Test</h1>
   <div id="board"></div>
   <div class="panel">
+    <div class="controls" style="justify-content: space-between; align-items: center;">
+      <div>
+        <label for="puzzle-select">Puzzle:</label>
+        <select id="puzzle-select"></select>
+      </div>
+      <div>
+        <button id="prev-puzzle">Prev puzzle</button>
+        <button id="next-puzzle">Next puzzle</button>
+      </div>
+    </div>
     <div id="puzzle-meta"></div>
     <p id="status"></p>
     <p id="commentary"></p>
@@ -69,8 +79,9 @@
   <script>
     async function main() {
       const res = await fetch('puzzles.json');
-      const puzzles = await res.json();
-      const puzzle = puzzles[0];
+    const puzzles = await res.json();
+      let puzzleIndex = 0;
+      let puzzle = puzzles[puzzleIndex];
 
       const game = new Chess(puzzle.fen);
       const board = Chessboard('board', {
@@ -88,14 +99,12 @@
       const nextBtn = document.getElementById('next-move');
       const prevBtn = document.getElementById('prev-move');
       const resetBtn = document.getElementById('reset');
+      const selectEl = document.getElementById('puzzle-select');
+      const prevPuzzleBtn = document.getElementById('prev-puzzle');
+      const nextPuzzleBtn = document.getElementById('next-puzzle');
 
-      metaEl.innerHTML = `
-        <strong>ID:</strong> ${puzzle.id}<br/>
-        <strong>Source:</strong> ${puzzle.source}<br/>
-        <strong>Side to move:</strong> ${puzzle.side_to_move === 'w' ? 'White' : 'Black'}<br/>
-        <strong>Result:</strong> ${puzzle.result_type}<br/>
-        <strong>Themes:</strong> ${puzzle.themes.join(', ')}
-      `;
+      // populate selector
+      selectEl.innerHTML = puzzles.map((p, idx) => `<option value=\"${idx}\">${idx + 1}. ${p.id}</option>`).join('');
 
       let moveIndex = 0;
 
@@ -112,6 +121,24 @@
           const comment = (puzzle.commentary || [])[puzzle.commentary.length - 1];
           commentaryEl.textContent = comment ? `Commentary: ${comment}` : '';
         }
+      }
+
+      function loadPuzzle(idx) {
+        puzzleIndex = (idx + puzzles.length) % puzzles.length;
+        puzzle = puzzles[puzzleIndex];
+        selectEl.value = puzzleIndex;
+        game.reset();
+        game.load(puzzle.fen);
+        board.position(puzzle.fen);
+        metaEl.innerHTML = `
+          <strong>ID:</strong> ${puzzle.id}<br/>
+          <strong>Source:</strong> ${puzzle.source}<br/>
+          <strong>Side to move:</strong> ${puzzle.side_to_move === 'w' ? 'White' : 'Black'}<br/>
+          <strong>Result:</strong> ${puzzle.result_type}<br/>
+          <strong>Themes:</strong> ${puzzle.themes.join(', ')}
+        `;
+        moveIndex = 0;
+        updateStatus();
       }
 
       nextBtn.addEventListener('click', () => {
@@ -137,11 +164,7 @@
       });
 
       resetBtn.addEventListener('click', () => {
-        game.reset();
-        game.load(puzzle.fen);
-        board.position(puzzle.fen);
-        moveIndex = 0;
-        updateStatus();
+        loadPuzzle(puzzleIndex);
       });
 
       document.addEventListener('keydown', (e) => {
@@ -149,10 +172,24 @@
           nextBtn.click();
         } else if (e.key === 'ArrowLeft') {
           prevBtn.click();
+        } else if (e.key === 'ArrowUp') {
+          prevPuzzleBtn.click();
+        } else if (e.key === 'ArrowDown') {
+          nextPuzzleBtn.click();
         }
       });
 
-      updateStatus();
+      selectEl.addEventListener('change', (e) => {
+        loadPuzzle(parseInt(e.target.value, 10));
+      });
+      prevPuzzleBtn.addEventListener('click', () => {
+        loadPuzzle(puzzleIndex - 1);
+      });
+      nextPuzzleBtn.addEventListener('click', () => {
+        loadPuzzle(puzzleIndex + 1);
+      });
+
+      loadPuzzle(0);
     }
 
     main().catch(err => {

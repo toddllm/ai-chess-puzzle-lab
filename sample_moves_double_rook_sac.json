@@ -1,0 +1,19 @@
+{
+  "game_id": "double_rook_sac",
+  "event": "DeepMind Puzzle",
+  "white": "White",
+  "black": "Black",
+  "site": "Gotham video",
+  "date": "2025.11.03",
+  "moves": [
+    { "ply": 1, "move_san": "Rg6+", "commentary": "Rook to g six check. Double rook sacrifice begins.", "speaker": "S1" },
+    { "ply": 2, "move_san": "hxg6", "commentary": "Pawn takes on g six. Both rooks are gone.", "speaker": "S1" },
+    { "ply": 3, "move_san": "Qa1", "commentary": "Queen to a one. Quiet retreat lining up the diagonal.", "speaker": "S1" },
+    { "ply": 4, "move_san": "Kxf7", "commentary": "King takes the f seven rook.", "speaker": "S1" },
+    { "ply": 5, "move_san": "Qf6+", "commentary": "Queen to f six check. Driving the king back.", "speaker": "S1" },
+    { "ply": 6, "move_san": "Kg8", "commentary": "King to g eight.", "speaker": "S1" },
+    { "ply": 7, "move_san": "Bh6", "commentary": "Bishop to a six. Shuts down counterplay.", "speaker": "S1" },
+    { "ply": 8, "move_san": "Re8", "commentary": "Black plays rook e eight to guard g seven.", "speaker": "S1" },
+    { "ply": 9, "move_san": "Qg7#", "commentary": "Queen to g seven mate. Queen protected by bishop a six.", "speaker": "S1" }
+  ]
+}
