@@ -83,7 +83,7 @@ def capture_audio_clip(page, action, base_url: str, label: str) -> Path:
 def main():
     parser = argparse.ArgumentParser(description="Smoke test: Playwright + Whisper.")
     parser.add_argument("--port", type=int, default=8010)
-    parser.add_argument("--engine", default="gtts", help="TTS engine to use for the server.")
+    parser.add_argument("--engine", default="dia", help="TTS engine to use for the server.")
     args = parser.parse_args()
 
     base_url = f"http://127.0.0.1:{args.port}"

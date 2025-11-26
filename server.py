@@ -29,7 +29,6 @@ from flask import Flask, jsonify, request, send_from_directory
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT_CACHE_DIR = ROOT / "generated_audio"
-STATIC_AUDIO_DIR = ROOT / "audio"
 
 
 def safe_slug(value: str) -> str:
@@ -134,16 +133,6 @@ class DiaEngine(BaseEngine):
         return dest, seconds
 
 
-def detect_default_engine() -> str:
-    try:
-        import importlib
-
-        importlib.import_module("dia")
-        return "dia"
-    except Exception:
-        return "gtts"
-
-
 def build_engine(engine_name: str, model_name: str, max_tokens: int) -> BaseEngine:
     if engine_name == "dia":
         return DiaEngine(model_name=model_name, max_tokens=max_tokens)
@@ -184,14 +173,10 @@ def create_app(engine_name: str, model_name: str, max_tokens: int, cache_dir: Pa
 
     @app.route("/audio/<path:filename>", methods=["GET"])
     def audio(filename: str):
-        # Prefer freshly generated audio, but fall back to static clips if present.
-        generated_path = cache_dir / filename
-        static_path = STATIC_AUDIO_DIR / filename
-        if generated_path.exists():
-            return send_from_directory(cache_dir, filename)
-        if static_path.exists():
-            return send_from_directory(STATIC_AUDIO_DIR, filename)
-        return jsonify({"error": "audio not found"}), 404
+        path = cache_dir / filename
+        if not path.exists():
+            return jsonify({"error": "audio not found"}), 404
+        return send_from_directory(cache_dir, filename)
 
     @app.route("/api/tts", methods=["POST"])
     def tts():
@@ -254,7 +239,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Serve the AI Chess Puzzle Lab with TTS commentary.")
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8010)
-    parser.add_argument("--tts-engine", choices=["dia", "gtts", "dummy"], default=detect_default_engine())
+    parser.add_argument("--tts-engine", choices=["dia", "gtts", "dummy"], default="dia")
     parser.add_argument("--model", default="nari-labs/Dia-1.6B-0626", help="Dia model name (if using dia engine).")
     parser.add_argument("--max-tokens", type=int, default=900, help="Max tokens for Dia generation.")
     parser.add_argument("--cache-dir", type=Path, default=DEFAULT_CACHE_DIR)

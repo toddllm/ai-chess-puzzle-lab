@@ -12,3 +12,5 @@ smoketest.png
 node_modules/
 generated_audio/
 playwright_runs/
+audio/
+audio_manifest.json

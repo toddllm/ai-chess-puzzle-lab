@@ -37,8 +37,7 @@ python server.py --port 8010 --tts-engine gtts
 # open http://localhost:8010
 ```
 
-Audio is cached under `generated_audio/` to avoid repeated synthesis of the same move commentary.
-Pre-generated MP3s for every move live in `audio/` with an index at `audio_manifest.json`; the static GitHub Pages site will use those automatically.
+Audio is generated live by Dia and cached under `generated_audio/` to avoid repeated synthesis. There is no static fallback; run the server to hear commentary.
 
 ## Controls
 
