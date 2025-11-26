@@ -1,6 +1,3 @@
-__pycache__/
-.venv/
-*.pyc
 .DS_Store
 *.mp4
 *.pdf
@@ -10,5 +7,6 @@ paper.txt
 notes.md
 smoketest.png
 node_modules/
+audio/
+audio_manifest.json
 generated_audio/
-playwright_runs/

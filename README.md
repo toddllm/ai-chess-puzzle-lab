@@ -1,5 +1,7 @@
 # AI Chess Puzzle Lab
 
+![AI Chess Puzzle Lab](screenshot.png)
+
 Chess puzzle viewer + TTS-ready pipeline built from the DeepMind “Generating Creative Chess Puzzles” paper and the Gotham video. Features multiple curated puzzles (DeepMind double rook sac + paper appendix mates), per-move commentary, keyboard navigation, and optional narrated audio (Dia, gTTS, or your own TTS).
 
 ## Live Demo
